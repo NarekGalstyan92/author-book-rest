@@ -1,17 +1,18 @@
 package am.itspace.authorbookrest.service;
 
-import am.itspace.authorbookrest.entity.Author;
+import am.itspace.authorbookrest.dto.AuthorResponseDto;
+import am.itspace.authorbookrest.dto.SaveAuthorDto;
 
 import java.util.List;
 
 public interface AuthorService {
-    Author create(Author author);
+    AuthorResponseDto create(SaveAuthorDto author);
 
-    List<Author> getAll();
+    List<AuthorResponseDto> getAll();
 
-    Author getById(int id);
+    AuthorResponseDto getById(int id);
 
-    Author update(int id, Author author);
+    AuthorResponseDto update(int id, SaveAuthorDto author);
 
     void deleteById(int id);
 }

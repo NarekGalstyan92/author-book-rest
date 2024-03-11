@@ -1,34 +1,25 @@
-package am.itspace.authorbookrest.entity;
+package am.itspace.authorbookrest.dto;
 
-import jakarta.persistence.*;
+import am.itspace.authorbookrest.entity.Gender;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
-@Entity
-@Table(name = "author")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Author {
+public class AuthorResponseDto {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     private String name;
 
     private String surname;
 
-    @Enumerated(EnumType.STRING)
     private Gender gender;
 
     private int age;
-
-    private LocalDate createdDate;
 
 }
