@@ -7,6 +7,8 @@ import am.itspace.authorbookrest.mapper.AuthorMapper;
 import am.itspace.authorbookrest.repository.AuthorRepository;
 import am.itspace.authorbookrest.service.AuthorService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -43,10 +45,10 @@ public class AuthorServiceImpl implements AuthorService {
      * @return a list of AuthorResponseDto objects representing all the authors
      */
     @Override
-    public List<AuthorResponseDto> getAll() {
-        List<Author> all = authorRepository.findAll();
+    public List<AuthorResponseDto> getAll(Pageable pageable) {
+        Page<Author> all = authorRepository.findAll(pageable);
         List<AuthorResponseDto> authorResponseDtos = new ArrayList<>();
-        for (Author author : all) {
+        for (Author author : all.getContent()) {
             authorResponseDtos.add(authorMapper.map(author));
         }
         return authorResponseDtos;

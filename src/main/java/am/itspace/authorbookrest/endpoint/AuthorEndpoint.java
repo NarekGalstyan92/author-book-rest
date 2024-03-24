@@ -4,8 +4,19 @@ import am.itspace.authorbookrest.dto.AuthorResponseDto;
 import am.itspace.authorbookrest.dto.SaveAuthorDto;
 import am.itspace.authorbookrest.service.AuthorService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -38,8 +49,16 @@ public class AuthorEndpoint {
      * @return A List of AuthorResponseDto objects representing the authors.
      */
     @GetMapping
-    public List<AuthorResponseDto> getAll() {
-        return authorService.getAll();
+    public List<AuthorResponseDto> getAll(@RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                          @RequestParam(value = "size", required = false, defaultValue = "5") int size,
+                                          @RequestParam(value = "orderBy", required = false, defaultValue = "id") String orderBy,
+                                          @RequestParam(value = "order", required = false, defaultValue = "DESC") String order) {
+
+        Sort sort = Sort.by(Sort.Direction.fromString(order), orderBy);
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return authorService.getAll(pageable);
     }
 
     /**
