@@ -9,12 +9,11 @@ public interface BookService {
 
     BookResponseDto save(SaveBookDto saveBookDto);
 
-    List<BookResponseDto> getAllBooks();
-
     BookResponseDto getBookById(int id);
 
     BookResponseDto updateBook(int id, SaveBookDto saveBookDto);
 
     void deleteBook(int id);
 
+    List<BookResponseDto> getAll();
 }

@@ -40,6 +40,7 @@ public class WebSecurityConfig {
                 .requestMatchers("/v1/users").permitAll()
                 .requestMatchers("/v1/users/image/**").permitAll()
                 .requestMatchers("/v1/users/getImage/**").permitAll()
+                .requestMatchers("countries/**").authenticated()
 //                .requestMatchers(HttpMethod.POST,"/v1/users/image/**").permitAll()
 //                .requestMatchers("/v1/users/getImage/**").permitAll()
                 .requestMatchers("/v1/users/auth").permitAll()

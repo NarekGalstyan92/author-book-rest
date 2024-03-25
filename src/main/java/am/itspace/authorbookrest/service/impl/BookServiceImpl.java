@@ -1,6 +1,7 @@
 package am.itspace.authorbookrest.service.impl;
 
 import am.itspace.authorbookrest.dto.BookResponseDto;
+import am.itspace.authorbookrest.dto.CBCurrencyResponseDto;
 import am.itspace.authorbookrest.dto.SaveBookDto;
 import am.itspace.authorbookrest.entity.Book;
 import am.itspace.authorbookrest.mapper.BookMapper;
@@ -8,7 +9,11 @@ import am.itspace.authorbookrest.repository.AuthorRepository;
 import am.itspace.authorbookrest.repository.BookRepository;
 import am.itspace.authorbookrest.service.BookService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,16 +31,12 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final AuthorRepository authorRepository;
     private final BookMapper bookMapper;
+    private final RestTemplate restTemplate;
+
+    @Value("${cb.armUrl}")
+    private String cbArmUrl;
 
 
-    /**
-     * Saves a book to the database.
-     *
-     * @param saveBookDto The SaveBookDto object containing the book details to be saved.
-     *                    It must not be null.
-     * @return The BookResponseDto object representing the saved book.
-     * It may be null if the book could not be saved.
-     */
     @Override
     public BookResponseDto save(SaveBookDto saveBookDto) {
         Book book = bookMapper.map(saveBookDto);
@@ -44,28 +45,7 @@ public class BookServiceImpl implements BookService {
         return bookMapper.map(book);
     }
 
-    /**
-     * Retrieves a list of all books.
-     *
-     * @return the list of all books as BookResponseDto objects
-     */
-    @Override
-    public List<BookResponseDto> getAllBooks() {
-        List<Book> all = bookRepository.findAll();
-        List<BookResponseDto> bookResponseDtoList = new ArrayList<>();
-        for (Book book : all) {
-            bookResponseDtoList.add(bookMapper.map(book));
-        }
-        return bookResponseDtoList;
-    }
 
-    /**
-     * Retrieves a book by its ID.
-     *
-     * @param id The ID of the book to retrieve. It must be an integer value.
-     * @return The BookResponseDto object representing the retrieved book.
-     * If the book with the given ID does not exist, null is returned.
-     */
     @Override
     public BookResponseDto getBookById(int id) {
         Book book = bookRepository.findById(id).orElse(null);
@@ -75,14 +55,6 @@ public class BookServiceImpl implements BookService {
         return bookMapper.map(book);
     }
 
-
-    /**
-     * Updates an existing book in the database based on the provided book ID and book details.
-     *
-     * @param id          The ID of the book to update. Must be a positive integer.
-     * @param saveBookDto The SaveBookDto object containing the updated book details. Must not be null.
-     * @return The BookResponseDto object representing the updated book. Returns null if the book with the given ID is not found.
-     */
     @Override
     public BookResponseDto updateBook(int id, SaveBookDto saveBookDto) {
         // Find the existing book from bookRepository
@@ -106,13 +78,43 @@ public class BookServiceImpl implements BookService {
         return bookMapper.map(updatedBook);
     }
 
-    /**
-     * Deletes a book from the database based on the given ID.
-     *
-     * @param id The ID of the book to be deleted. It must be a positive non-zero integer.
-     */
     @Override
     public void deleteBook(int id) {
         bookRepository.deleteById(id);
+    }
+
+    @Override
+    public List<BookResponseDto> getAll() {
+        List<Book> all = bookRepository.findAll(); // Fetching all the books from the book repository
+        List<BookResponseDto> dtoList = new ArrayList<>(); // Creating an empty list to hold BookResponseDto objects
+
+        if (!all.isEmpty()) { // Checking if the list of fetched books is not empty
+            double usdCurrency = getUsdCurrency(); // Retreiving the current USD currency rate
+
+            // Looping over all the fetched books
+            for (Book book : all) {
+                BookResponseDto bookResponseDto = bookMapper.map(book); // Mapping the book object to a BookResponseDto object
+                setUsdPrice(bookResponseDto, usdCurrency); // Setting the USD price for the book
+                dtoList.add(bookResponseDto);    // Adding the BookResponseDto object to the list
+            }
+        }
+        return dtoList; // Returning the list of BookResponseDto objects
+    }
+
+    private void setUsdPrice(BookResponseDto bookResponseDto, double usdCurrency) {
+        bookResponseDto.setPriceUSD(bookResponseDto.getPrice() / usdCurrency); // Sets the price in USD by dividing the original price by the exchange rate
+    }
+
+    private double getUsdCurrency() {
+
+        ResponseEntity<CBCurrencyResponseDto> responseEntity = restTemplate.getForEntity(cbArmUrl, CBCurrencyResponseDto.class); // Perform a GET request for the exchange rate
+
+        // Check if the request was successful
+        if (responseEntity.getStatusCode() == HttpStatusCode.valueOf(200)) {
+            CBCurrencyResponseDto body = responseEntity.getBody(); // If the request was successful, parse the exchange rate from the response
+            double parsed = Double.parseDouble(body.getUsd()); // Converts the usd value from String to double
+            return Math.round(parsed); // Round the exchange rate to the nearest whole number and return it
+        }
+        return 0; // If the request failed, return a default value of 0
     }
 }
