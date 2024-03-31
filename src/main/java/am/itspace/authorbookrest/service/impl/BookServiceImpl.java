@@ -1,14 +1,22 @@
 package am.itspace.authorbookrest.service.impl;
 
+import am.itspace.authorbookrest.dto.BookFilterDto;
 import am.itspace.authorbookrest.dto.BookResponseDto;
 import am.itspace.authorbookrest.dto.CBCurrencyResponseDto;
 import am.itspace.authorbookrest.dto.SaveBookDto;
 import am.itspace.authorbookrest.entity.Book;
+import am.itspace.authorbookrest.entity.QBook;
 import am.itspace.authorbookrest.mapper.BookMapper;
 import am.itspace.authorbookrest.repository.AuthorRepository;
 import am.itspace.authorbookrest.repository.BookRepository;
 import am.itspace.authorbookrest.service.BookService;
+import com.querydsl.core.types.Order;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.PathBuilder;
+import com.querydsl.jpa.impl.JPAQuery;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +40,7 @@ public class BookServiceImpl implements BookService {
     private final AuthorRepository authorRepository;
     private final BookMapper bookMapper;
     private final RestTemplate restTemplate;
+    private final EntityManager entityManager;
 
     @Value("${cb.armUrl}")
     private String cbArmUrl;
@@ -99,6 +108,53 @@ public class BookServiceImpl implements BookService {
             }
         }
         return dtoList; // Returning the list of BookResponseDto objects
+    }
+
+    @Override
+    public List<BookResponseDto> getAllByFilter(BookFilterDto bookFilterDto) {
+
+        JPAQuery<Book> query = new JPAQuery<>(entityManager);// Create a new Query from JPAQuery class
+        QBook qbook = QBook.book;
+        
+        JPAQuery<Book> from = query.from(qbook);  // Initialize the query from book
+
+        // If the book title exists in the FilterDto, add it as a condition in the query
+        if (StringUtils.isNotBlank(bookFilterDto.getTitle())) {
+            from.where(qbook.title.containsIgnoreCase(bookFilterDto.getTitle()));
+        }
+
+        // If the book description exists in the FilterDto, add it as a condition in the query
+        if (StringUtils.isNotBlank(bookFilterDto.getDescription())) {
+            from.where(qbook.description.containsIgnoreCase(bookFilterDto.getDescription()));
+        }
+
+        // If the min price and max price exists in the FilterDto, add it as a condition in the query
+        if (bookFilterDto.getMinPrice() != null && bookFilterDto.getMaxPrice() != null) {
+            from.where(qbook.price.between(bookFilterDto.getMinPrice(), bookFilterDto.getMaxPrice()));
+        } else if (bookFilterDto.getMinPrice() != null) {
+            from.where(qbook.price.goe(bookFilterDto.getMinPrice()));
+        }else if (bookFilterDto.getMaxPrice() != null) {
+            from.where(qbook.price.loe(bookFilterDto.getMaxPrice()));
+        }
+
+        // If the page number is greater than 0, add offset to the query
+        if (bookFilterDto.getPage() > 0) {
+            from.offset((long)bookFilterDto.getPage() * bookFilterDto.getSize());
+        }
+
+        // Limit the number of results
+        from.limit(bookFilterDto.getSize());
+
+        // Order the results
+        PathBuilder<Object> orderByExpression = new PathBuilder<Object>(Book.class, bookFilterDto.getOrderBy());
+        from.orderBy(new OrderSpecifier("asc".equalsIgnoreCase(bookFilterDto.getOrderDirection()) ? Order.ASC
+                : Order.DESC, orderByExpression));
+
+        // Execute the query and fetch results
+        List<Book> books = from.fetch();
+
+        // Convert the entities to DTO and return the list
+        return bookMapper.map(books);
     }
 
     private void setUsdPrice(BookResponseDto bookResponseDto, double usdCurrency) {

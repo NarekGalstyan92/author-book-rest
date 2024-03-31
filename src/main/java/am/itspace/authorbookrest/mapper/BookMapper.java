@@ -6,6 +6,8 @@ import am.itspace.authorbookrest.entity.Book;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 /**
  * The BookMapper interface is responsible for mapping Book objects to BookResponseDto objects
  * and SaveBookDto objects to Book objects using the MapStruct library.
@@ -22,4 +24,6 @@ public interface BookMapper {
     BookResponseDto map(Book book);
 
     Book map(SaveBookDto saveBookDto);
+
+    List<BookResponseDto> map(List<Book> books);
 }

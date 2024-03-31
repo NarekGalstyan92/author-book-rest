@@ -1,5 +1,6 @@
 package am.itspace.authorbookrest.service;
 
+import am.itspace.authorbookrest.dto.BookFilterDto;
 import am.itspace.authorbookrest.dto.BookResponseDto;
 import am.itspace.authorbookrest.dto.SaveBookDto;
 
@@ -16,4 +17,6 @@ public interface BookService {
     void deleteBook(int id);
 
     List<BookResponseDto> getAll();
+
+    List<BookResponseDto> getAllByFilter(BookFilterDto bookFilterDto);
 }
